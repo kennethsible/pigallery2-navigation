@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PiGallery2 Navigation
 // @namespace    https://github.com/kennethsible
-// @version      1.1
+// @version      1.2
 // @description  Tap or click the edges of the screen to navigate the lightbox in PiGallery2.
 // @author       Ken Sible
 // @include      *://pigallery2.*
@@ -20,11 +20,13 @@
     function handleEvent(e) {
         const controls = document.querySelector('div.controls');
         const lightbox = document.querySelector('div.lightbox');
+        const infoPanel = document.querySelector('app-info-panel');
         const blackCanvas = document.querySelector('div.blackCanvas');
         const isPreviewOpen = getComputedStyle(blackCanvas).opacity === '1';
+        const isInfoPanel = infoPanel?.offsetWidth > 0;
         const isVideoPlayer = lightbox.querySelector('div.controls-video');
         const buttonPressed = e.target.closest('button, ng-icon, #dropdown-basic');
-        if (!isPreviewOpen || isVideoPlayer || buttonPressed) return;
+        if (!isPreviewOpen || isInfoPanel || isVideoPlayer || buttonPressed) return;
 
         const screenWidth = window.innerWidth;
         const edgeLimit = screenWidth * 0.30;
