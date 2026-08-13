@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PiGallery2 Navigation
 // @namespace    https://github.com/kennethsible
-// @version      1.2
+// @version      1.3
 // @description  Tap or click the edges of the screen to navigate the lightbox in PiGallery2.
 // @author       Ken Sible
 // @include      *://pigallery2.*
@@ -16,27 +16,46 @@
     'use strict';
 
     let lastNav = 0;
+    let touchStartTime = 0;
+    const MAX_TOUCH_DURATION = 250;
 
     function handleEvent(e) {
+        const blackCanvas = document.querySelector('div.blackCanvas');
+        const isPreviewOpen = blackCanvas && getComputedStyle(blackCanvas).opacity === '1';
+
+        const infoPanel = document.querySelector('app-info-panel');
+        const isInfoPanel = infoPanel?.offsetWidth > 0;
+
         const controls = document.querySelector('div.controls');
         const lightbox = document.querySelector('div.lightbox');
-        const infoPanel = document.querySelector('app-info-panel');
-        const blackCanvas = document.querySelector('div.blackCanvas');
-        const isPreviewOpen = getComputedStyle(blackCanvas).opacity === '1';
-        const isInfoPanel = infoPanel?.offsetWidth > 0;
-        const isVideoPlayer = lightbox.querySelector('div.controls-video');
+        const isVideoPlayer = lightbox?.querySelector('div.controls-video');
+
         const buttonPressed = e.target.closest('button, ng-icon, #dropdown-basic');
+
         if (!isPreviewOpen || isInfoPanel || isVideoPlayer || buttonPressed) return;
 
         const screenWidth = window.innerWidth;
         const edgeLimit = screenWidth * 0.30;
         const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
         const navKey = clientX < edgeLimit ? 'ArrowLeft' : (clientX > screenWidth - edgeLimit ? 'ArrowRight' : null);
+
         if (!navKey) return;
 
-        if (controls.classList.contains('dim-controls')) {
+        if (e.type === 'touchstart') {
+            touchStartTime = Date.now();
+        }
+
+        if (controls?.classList.contains('dim-controls')) {
             if (e.cancelable) e.preventDefault();
             e.stopPropagation();
+        }
+
+        if (e.type === 'touchend') {
+            const touchDuration = Date.now() - touchStartTime;
+            if (touchDuration > MAX_TOUCH_DURATION) {
+                lastNav = Date.now();
+                return;
+            }
         }
 
         const isFinalAction = e.type === 'touchend' || e.type === 'click';
