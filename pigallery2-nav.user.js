@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PiGallery2 Navigation
 // @namespace    https://github.com/kennethsible
-// @version      1.3
+// @version      1.4
 // @description  Tap or click the edges of the screen to navigate the lightbox in PiGallery2.
 // @author       Ken Sible
 // @include      *://pigallery2.*
@@ -15,7 +15,7 @@
 (function () {
     'use strict';
 
-    let lastNav = 0;
+    let lastTouchTime = 0;
     let touchStartTime = 0;
     const MAX_TOUCH_DURATION = 250;
 
@@ -41,31 +41,37 @@
 
         if (!navKey) return;
 
-        if (e.type === 'touchstart') {
-            touchStartTime = Date.now();
+        if (e.type === 'dblclick') {
+            if (e.cancelable) e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
         }
 
         if (controls?.classList.contains('dim-controls')) {
             if (e.cancelable) e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
+        }
+
+        if (e.type === 'touchstart') {
+            touchStartTime = Date.now();
         }
 
         if (e.type === 'touchend') {
+            lastTouchTime = Date.now();
             const touchDuration = Date.now() - touchStartTime;
-            if (touchDuration > MAX_TOUCH_DURATION) {
-                lastNav = Date.now();
-                return;
+            if (touchDuration <= MAX_TOUCH_DURATION) {
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: navKey, bubbles: true }));
             }
         }
 
-        const isFinalAction = e.type === 'touchend' || e.type === 'click';
-        if (isFinalAction && Date.now() - lastNav > 300) {
-            lastNav = Date.now();
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: navKey, bubbles: true }));
+        if (e.type === 'click') {
+            if (Date.now() - lastTouchTime > 500) {
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: navKey, bubbles: true }));
+            }
         }
     }
 
-    ['click', 'touchstart', 'touchend'].forEach(evt =>
+    ['click', 'dblclick', 'touchstart', 'touchend'].forEach(evt =>
         window.addEventListener(evt, handleEvent, { capture: true, passive: false })
     );
 })();
