@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PiGallery2 Navigation
 // @namespace    https://github.com/kennethsible
-// @version      1.4
+// @version      1.5
 // @description  Tap or click the edges of the screen to navigate the lightbox in PiGallery2.
 // @author       Ken Sible
 // @include      *://pigallery2.*
@@ -19,6 +19,16 @@
     let touchStartTime = 0;
     const MAX_TOUCH_DURATION = 250;
 
+    function triggerNav(navKey) {
+        const arrow = document.querySelector(navKey === 'ArrowLeft' ? '#leftArrow' : '#rightArrow');
+        if (arrow) {
+            arrow.click();
+            return;
+        }
+        const keyCode = navKey === 'ArrowLeft' ? 37 : 39;
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: navKey, code: navKey, keyCode, which: keyCode, bubbles: true }));
+    }
+
     function handleEvent(e) {
         const blackCanvas = document.querySelector('div.blackCanvas');
         const isPreviewOpen = blackCanvas && getComputedStyle(blackCanvas).opacity === '1';
@@ -30,7 +40,7 @@
         const lightbox = document.querySelector('div.lightbox');
         const isVideoPlayer = lightbox?.querySelector('div.controls-video');
 
-        const buttonPressed = e.target.closest('button, ng-icon, #dropdown-basic');
+        const buttonPressed = e.target.closest('button, [role="button"], .control-button, .navigation-arrow, ng-icon, #dropdown-basic');
 
         if (!isPreviewOpen || isInfoPanel || isVideoPlayer || buttonPressed) return;
 
@@ -52,26 +62,26 @@
             e.stopImmediatePropagation();
         }
 
-        if (e.type === 'touchstart') {
+        if (e.type === 'pointerdown' || e.type === 'touchstart') {
             touchStartTime = Date.now();
         }
 
-        if (e.type === 'touchend') {
+        if (e.type === 'pointerup' || e.type === 'touchend') {
             lastTouchTime = Date.now();
             const touchDuration = Date.now() - touchStartTime;
             if (touchDuration <= MAX_TOUCH_DURATION) {
-                window.dispatchEvent(new KeyboardEvent('keydown', { key: navKey, bubbles: true }));
+                triggerNav(navKey);
             }
         }
 
         if (e.type === 'click') {
             if (Date.now() - lastTouchTime > 500) {
-                window.dispatchEvent(new KeyboardEvent('keydown', { key: navKey, bubbles: true }));
+                triggerNav(navKey);
             }
         }
     }
 
-    ['click', 'dblclick', 'touchstart', 'touchend'].forEach(evt =>
+    ['pointerdown', 'pointerup', 'click', 'dblclick', 'touchstart', 'touchend'].forEach(evt =>
         window.addEventListener(evt, handleEvent, { capture: true, passive: false })
     );
 })();
