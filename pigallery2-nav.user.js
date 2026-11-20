@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PiGallery2 Navigation
 // @namespace    https://github.com/kennethsible
-// @version      1.5
+// @version      1.5.1
 // @description  Tap or click the edges of the screen to navigate the lightbox in PiGallery2.
 // @author       Ken Sible
 // @include      *://pigallery2.*
@@ -69,6 +69,7 @@
         if (e.type === 'pointerup' || e.type === 'touchend') {
             lastTouchTime = Date.now();
             const touchDuration = Date.now() - touchStartTime;
+            touchStartTime = 0;
             if (touchDuration <= MAX_TOUCH_DURATION) {
                 triggerNav(navKey);
             }
